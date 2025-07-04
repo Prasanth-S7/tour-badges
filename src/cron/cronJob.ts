@@ -1,5 +1,5 @@
 import { getPendingUsers } from "../utils/cronHelpers";
-import { User, FailedUser, BadgeIssuanceError } from "../types/types";
+import { User, BadgeIssuanceError, BatchResult } from "../types/types";
 import { issueBadge } from "./issueBadge";
 import { createSlackNotifier, ErrorReport } from "../utils/slack";
 
@@ -16,7 +16,7 @@ export async function processPendingUsers(env: any): Promise<void> {
       return;
     }
     
-    console.log(`🔄 Starting to process ${pendingUsers.length} pending users`);
+    console.log(`Starting to process ${pendingUsers.length} pending users`);
     
     // Process in batches
     const allFailedUsers: BadgeIssuanceError[] = [];
@@ -24,7 +24,7 @@ export async function processPendingUsers(env: any): Promise<void> {
     
     for (let i = 0; i < pendingUsers.length; i += BATCH_SIZE) {
       const batch = pendingUsers.slice(i, i + BATCH_SIZE);
-      console.log(`📦 Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(pendingUsers.length / BATCH_SIZE)}`);
+      console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(pendingUsers.length / BATCH_SIZE)}`);
       
       const batchResult = await processBatch(batch, env);
       allFailedUsers.push(...batchResult.failedUsers);
@@ -58,35 +58,30 @@ export async function processPendingUsers(env: any): Promise<void> {
     if (slackNotifier) {
       if (totalFailed > 0) {
         await slackNotifier.sendErrorReport(errorReport);
-        console.log(`📢 Sent error report to Slack for ${totalFailed} failures`);
+        console.log(`Sent error report to Slack for ${totalFailed} failures`);
       } else if (totalSuccess > 0) {
         await slackNotifier.sendSuccessReport(totalProcessed, totalSuccess, duration);
-        console.log(`📢 Sent success report to Slack for ${totalSuccess} successful issuances`);
+        console.log(`Sent success report to Slack for ${totalSuccess} successful issuances`);
       }
     }
     
     // Log summary
-    console.log(`📊 Processing complete: ${totalSuccess}/${totalProcessed} successful (${duration}ms)`);
+    console.log(`Processing complete: ${totalSuccess}/${totalProcessed} successful (${duration}ms)`);
     if (totalFailed > 0) {
-      console.log(`❌ ${totalFailed} failures occurred`);
+      console.log(`${totalFailed} failures occurred`);
     }
     
   } catch (error: any) {
     const duration = Date.now() - startTime;
-    console.error('🚨 Critical error in user processing:', error);
+    console.error('Critical error in user processing:', error);
     
     // Send critical error notification
     const slackNotifier = createSlackNotifier(env);
     if (slackNotifier) {
       await slackNotifier.sendCriticalError(error, 'badge issuance processing');
-      console.log('📢 Sent critical error notification to Slack');
+      console.log('Sent critical error notification to Slack');
     }
   }
-}
-
-interface BatchResult {
-  successfulUsers: User[];
-  failedUsers: BadgeIssuanceError[];
 }
 
 async function processBatch(batch: User[], env: any): Promise<BatchResult> {
@@ -150,9 +145,9 @@ async function processBatch(batch: User[], env: any): Promise<BatchResult> {
         .bind(true, ...userIds)
         .run();
         
-      console.log(`✅ Successfully updated ${successfulUsers.length} users in database`);
+      console.log(`Successfully updated ${successfulUsers.length} users in database`);
     } catch (dbError) {
-      console.error('❌ Failed to update successful users in database:', dbError);
+      console.error('Failed to update successful users in database:', dbError);
       
       // Add database errors to failed users
       successfulUsers.forEach(user => {

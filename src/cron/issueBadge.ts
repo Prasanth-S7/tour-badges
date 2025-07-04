@@ -1,13 +1,38 @@
 import { getAccessToken } from "../utils/cronHelpers";
 import { getBadgeClassId } from "../utils/cronHelpers";
 import { BadgeIssuanceResult } from "../types/types";
+import { User } from "../types/types";
 
 export const issueBadge = async (email: string, name: string, env: Env): Promise<BadgeIssuanceResult> => {
 	try {
-		// Get access token with error handling
+		// Get user from database to find their Badgr username
+		const userResult = await env.DB
+			.prepare('SELECT * FROM users WHERE email = ? LIMIT 1')
+			.bind(email)
+			.all<User>();
+		
+		if (userResult.results.length === 0) {
+			return {
+				success: false,
+				error: `User not found in database: ${email}`,
+				statusCode: 404
+			};
+		}
+		
+		const user = userResult.results[0] as User;
+		
+		if (!user.badgr_username) {
+			return {
+				success: false,
+				error: `User has not completed OAuth authentication: ${email}`,
+				statusCode: 401
+			};
+		}
+		
+		// Get access token for this specific user
 		let accessToken: string;
 		try {
-			accessToken = await getAccessToken(env);
+			accessToken = await getAccessToken(env, user.badgr_username);
 		} catch (error) {
 			return {
 				success: false,
