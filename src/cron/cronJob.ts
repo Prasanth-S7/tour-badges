@@ -1,9 +1,11 @@
 import { getPendingUsers } from "../utils/cronHelpers";
-import { User, FailedUser } from "../types/types";
+import { User, FailedUser, BadgeIssuanceError } from "../types/types";
 import { issueBadge } from "./issueBadge";
+import { createSlackNotifier, ErrorReport } from "../utils/slack";
 
 export async function processPendingUsers(env: any): Promise<void> {
   const BATCH_SIZE = 10;
+  const startTime = Date.now();
   
   try {
     // Get pending users
@@ -14,66 +16,169 @@ export async function processPendingUsers(env: any): Promise<void> {
       return;
     }
     
+    console.log(`🔄 Starting to process ${pendingUsers.length} pending users`);
+    
     // Process in batches
-    const allFailedUsers: FailedUser[] = [];
+    const allFailedUsers: BadgeIssuanceError[] = [];
+    const allSuccessfulUsers: User[] = [];
     
     for (let i = 0; i < pendingUsers.length; i += BATCH_SIZE) {
       const batch = pendingUsers.slice(i, i + BATCH_SIZE);
-      const batchFailures = await processBatch(batch, env);
-      allFailedUsers.push(...batchFailures);
+      console.log(`📦 Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(pendingUsers.length / BATCH_SIZE)}`);
+      
+      const batchResult = await processBatch(batch, env);
+      allFailedUsers.push(...batchResult.failedUsers);
+      allSuccessfulUsers.push(...batchResult.successfulUsers);
     }
     
-    // Handle any failures
-    if (allFailedUsers.length > 0) {
-      //send slack notification
-      console.log("send slack notification")
+    const duration = Date.now() - startTime;
+    const totalProcessed = pendingUsers.length;
+    const totalSuccess = allSuccessfulUsers.length;
+    const totalFailed = allFailedUsers.length;
+    
+    // Create error report
+    const errorReport: ErrorReport = {
+      totalProcessed,
+      totalFailed,
+      totalSuccess,
+      failedUsers: allFailedUsers.map(user => ({
+        email: user.email,
+        name: user.name,
+        error: user.error,
+        timestamp: user.timestamp
+      })),
+      environment: env.ENVIRONMENT,
+      timestamp: new Date().toISOString(),
+      duration
+    };
+    
+    // Send notifications
+    const slackNotifier = createSlackNotifier(env);
+    
+    if (slackNotifier) {
+      if (totalFailed > 0) {
+        await slackNotifier.sendErrorReport(errorReport);
+        console.log(`📢 Sent error report to Slack for ${totalFailed} failures`);
+      } else if (totalSuccess > 0) {
+        await slackNotifier.sendSuccessReport(totalProcessed, totalSuccess, duration);
+        console.log(`📢 Sent success report to Slack for ${totalSuccess} successful issuances`);
+      }
+    }
+    
+    // Log summary
+    console.log(`📊 Processing complete: ${totalSuccess}/${totalProcessed} successful (${duration}ms)`);
+    if (totalFailed > 0) {
+      console.log(`❌ ${totalFailed} failures occurred`);
     }
     
   } catch (error: any) {
-    //send slack notification
-    console.error('Critical error in user processing:', error);
+    const duration = Date.now() - startTime;
+    console.error('🚨 Critical error in user processing:', error);
+    
+    // Send critical error notification
+    const slackNotifier = createSlackNotifier(env);
+    if (slackNotifier) {
+      await slackNotifier.sendCriticalError(error, 'badge issuance processing');
+      console.log('📢 Sent critical error notification to Slack');
+    }
   }
 }
 
-async function processBatch(batch: User[], env: any): Promise<FailedUser[]> {
+interface BatchResult {
+  successfulUsers: User[];
+  failedUsers: BadgeIssuanceError[];
+}
 
-  const responses = await Promise.all(
-    batch.map(user => issueBadge(user.email, user.name, env))
+async function processBatch(batch: User[], env: any): Promise<BatchResult> {
+  const successfulUsers: User[] = [];
+  const failedUsers: BadgeIssuanceError[] = [];
+
+  // Process users in parallel with individual error handling
+  const results = await Promise.allSettled(
+    batch.map(async (user) => {
+      try {
+        const result = await issueBadge(user.email, user.name, env);
+        return { user, result };
+      } catch (error) {
+        return { 
+          user, 
+          result: {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            statusCode: 500
+          }
+        };
+      }
+    })
   );
 
-  const successfulUsers: User[] = [];
-  const failedUsers: FailedUser[] = [];
-
-  batch.forEach((user, index) => {
-    const response: any = responses[index];
-    
-    if (response.status.success) {
-      successfulUsers.push(user);
+  // Process results
+  results.forEach((promiseResult) => {
+    if (promiseResult.status === 'fulfilled') {
+      const { user, result } = promiseResult.value;
+      
+      if (result.success) {
+        successfulUsers.push(user);
+      } else {
+        failedUsers.push({
+          ...user,
+          error: result.error || 'Unknown error',
+          timestamp: new Date().toISOString(),
+          retryCount: 0
+        });
+      }
     } else {
+      // Promise was rejected - this shouldn't happen with our try-catch
+      const user = batch[results.indexOf(promiseResult)];
       failedUsers.push({
         ...user,
-        error: response.statusText || 'Unknown error'
+        error: promiseResult.reason instanceof Error ? promiseResult.reason.message : 'Promise rejected',
+        timestamp: new Date().toISOString(),
+        retryCount: 0
       });
     }
   });
 
-  // Update successful users
+  // Update successful users in database
   if (successfulUsers.length > 0) {
-    const placeholders = successfulUsers.map(() => '?').join(',');
-    const userIds = successfulUsers.map(user => user.id);
-    
-    await env.DB
-      .prepare(`UPDATE users SET badge_received = ? WHERE id IN (${placeholders})`)
-      .bind(true, ...userIds)
-      .run();
+    try {
+      const placeholders = successfulUsers.map(() => '?').join(',');
+      const userIds = successfulUsers.map(user => user.id);
       
-    console.log(`✅ Successfully processed ${successfulUsers.length} certificates`);
+      await env.DB
+        .prepare(`UPDATE users SET badge_received = ? WHERE id IN (${placeholders})`)
+        .bind(true, ...userIds)
+        .run();
+        
+      console.log(`✅ Successfully updated ${successfulUsers.length} users in database`);
+    } catch (dbError) {
+      console.error('❌ Failed to update successful users in database:', dbError);
+      
+      // Add database errors to failed users
+      successfulUsers.forEach(user => {
+        failedUsers.push({
+          ...user,
+          error: `Database update failed: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`,
+          timestamp: new Date().toISOString(),
+          retryCount: 0
+        });
+      });
+      
+      // Clear successful users since database update failed
+      successfulUsers.length = 0;
+    }
   }
 
-  // Log failures
-  failedUsers.forEach(user => {
-    console.error(`❌ Failed to issue badge to ${user.email}: ${user.error}`);
-  });
+  // Log batch results
+  if (successfulUsers.length > 0) {
+    console.log(`✅ Batch completed: ${successfulUsers.length} successful, ${failedUsers.length} failed`);
+  }
+  
+  if (failedUsers.length > 0) {
+    failedUsers.forEach(user => {
+      console.error(`❌ Failed to issue badge to ${user.email}: ${user.error}`);
+    });
+  }
 
-  return failedUsers;
+  return { successfulUsers, failedUsers };
 }

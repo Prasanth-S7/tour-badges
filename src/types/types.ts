@@ -6,7 +6,7 @@ export interface User {
 }
 
 export interface FailedUser extends User {
-    error: string;
+  error: string;
 }
 
 export interface AccessTokenResponse {
@@ -15,4 +15,25 @@ export interface AccessTokenResponse {
 	expires_in: number;
 	scope: string;
 	refresh_token: string;
+}
+
+export interface BadgeIssuanceResult {
+  success: boolean;
+  data?: any;
+  error?: string;
+  statusCode?: number;
+}
+
+export interface BadgeIssuanceError {
+  email: string;
+  name: string;
+  error: string;
+  timestamp: string;
+  retryCount?: number;
+}
+
+
+export interface BatchResult {
+  successfulUsers: User[];
+  failedUsers: BadgeIssuanceError[];
 }
