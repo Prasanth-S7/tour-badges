@@ -1,2 +1,5 @@
 BADGR_USERNAME=<badgr_username>
 BADGR_PASSWORD=<badgr_password>
+
+# Slack Notifications (Optional)
+# SLACK_WEBHOOK_URL=<your_slack_webhook_url>
