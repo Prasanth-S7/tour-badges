@@ -61,11 +61,13 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           environment: production
           secrets: |
-            BADGR_USERNAME
-            BADGR_PASSWORD
+            BADGR_CLIENT_ID
+            BADGR_CLIENT_SECRET
+            ENCRYPTION_KEY
             SLACK_WEBHOOK_URL
         env:
-          BADGR_USERNAME: ${{ secrets.BADGR_USERNAME }}
-          BADGR_PASSWORD: ${{ secrets.BADGR_PASSWORD }}
+          BADGR_CLIENT_ID: ${{ secrets.BADGR_CLIENT_ID }}
+          BADGR_CLIENT_SECRET: ${{ secrets.BADGR_CLIENT_SECRET }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           command: deploy src/index.ts --env production
