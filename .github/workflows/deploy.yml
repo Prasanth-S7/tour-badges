@@ -63,7 +63,9 @@ jobs:
           secrets: |
             BADGR_USERNAME
             BADGR_PASSWORD
+            SLACK_WEBHOOK_URL
         env:
           BADGR_USERNAME: ${{ secrets.BADGR_USERNAME }}
           BADGR_PASSWORD: ${{ secrets.BADGR_PASSWORD }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           command: deploy src/index.ts --env production
