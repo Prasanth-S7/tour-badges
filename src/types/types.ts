@@ -5,6 +5,7 @@ export interface User {
   badge_received: number;
   badgr_username?: string;
   encrypted_bearer_token?: string;
+  encrypted_refresh_token?: string;
   token_expires_at?: string;
   created_at: string;
 }

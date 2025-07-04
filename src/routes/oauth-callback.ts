@@ -78,11 +78,10 @@ export const oauthCallback = async (request: Request, env: Env, createResponse: 
       let isNewUser = false;
       
       if (existingUserResult.results.length === 0) {
-        // User doesn't exist - create new user (enrollment)
         const insertResult = await env.DB
           .prepare(`
-            INSERT INTO users (name, email, badge_received, badgr_username, encrypted_bearer_token, token_expires_at) 
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO users (name, email, badge_received, badgr_username, encrypted_bearer_token, encrypted_refresh_token, token_expires_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
           `)
           .bind(
             `${badgrUser.firstName} ${badgrUser.lastName}`,
@@ -90,6 +89,7 @@ export const oauthCallback = async (request: Request, env: Env, createResponse: 
             false,
             badgrUser.username,
             await encryptData(tokenData.access_token, (env as any).ENCRYPTION_KEY),
+            await encryptData(tokenData.refresh_token, (env as any).ENCRYPTION_KEY),
             new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString()
           )
           .run();
@@ -101,7 +101,6 @@ export const oauthCallback = async (request: Request, env: Env, createResponse: 
           }, 500);
         }
         
-        // Get the newly created user
         const newUserResult = await env.DB
           .prepare('SELECT * FROM users WHERE email = ? LIMIT 1')
           .bind(badgrUser.email)
@@ -110,25 +109,23 @@ export const oauthCallback = async (request: Request, env: Env, createResponse: 
         user = newUserResult.results[0];
         isNewUser = true;
       } else {
-        // User exists - update their Badgr credentials
         user = existingUserResult.results[0];
         
-        // Encrypt the bearer token
         const encryptedToken = await encryptData(tokenData.access_token, (env as any).ENCRYPTION_KEY);
+        const encryptedRefreshToken = await encryptData(tokenData.refresh_token, (env as any).ENCRYPTION_KEY);
         
-        // Calculate token expiration
         const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString();
         
-        // Update user with Badgr credentials
         const updateResult = await env.DB
           .prepare(`
             UPDATE users 
             SET badgr_username = ?, 
                 encrypted_bearer_token = ?, 
+                encrypted_refresh_token = ?,
                 token_expires_at = ? 
             WHERE id = ?
           `)
-          .bind(badgrUser.username, encryptedToken, expiresAt, user.id)
+          .bind(badgrUser.username, encryptedToken, encryptedRefreshToken, expiresAt, user.id)
           .run();
         
         if (!updateResult.success) {
