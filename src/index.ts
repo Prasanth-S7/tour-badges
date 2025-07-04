@@ -1,4 +1,3 @@
-import { userEnroll } from "./routes/user.enroll";
 import { oauthCallback } from "./routes/oauth-callback";
 import { createResponseFactory } from "./utils/response";
 import { processPendingUsers } from "./cron/cronJob";
@@ -7,10 +6,10 @@ export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		const { method } = request;
 		const createResponse = createResponseFactory(env);
-		const { pathname } = new URL(request.url)
 		
 		switch (method) {
 			case 'GET':
+				const { pathname } = new URL(request.url);
 				if (pathname === '/api/v1/oauth/callback') {
 					return await oauthCallback(request, env, createResponse);
 				}
@@ -20,15 +19,10 @@ export default {
 					message: 'Server is Healthy!'
 				}, 200);
 			case 'POST':
-				
-				if (pathname === '/api/v1/enroll') {
-					return await userEnroll(request, env, createResponse);
-				} else {
-					return createResponse({
-						success: false,
-						error: 'Endpoint not found'
-					}, 404);
-				}
+				return createResponse({
+					success: false,
+					error: 'No POST endpoints available. Use OAuth callback for enrollment.'
+				}, 404);
 			case 'OPTIONS':
 				return createResponse(204)
 			default:
