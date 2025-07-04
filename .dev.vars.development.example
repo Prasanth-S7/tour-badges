@@ -1,5 +1,10 @@
-BADGR_USERNAME=<badgr_username>
-BADGR_PASSWORD=<badgr_password>
+# Badgr OAuth Configuration (Required)
+BADGR_CLIENT_ID=<your_badgr_client_id>
+BADGR_CLIENT_SECRET=<your_badgr_client_secret>
+BADGR_REDIRECT_URI=https://your-worker-domain.workers.dev
 
-# Slack Notifications (Optional)
+# Encryption Key
+ENCRYPTION_KEY=<your_encryption_key>
+
+# Slack Notifications
 # SLACK_WEBHOOK_URL=<your_slack_webhook_url>
