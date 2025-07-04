@@ -3,6 +3,10 @@ export interface User {
   email: string;
   name: string;
   badge_received: number;
+  badgr_username?: string;
+  encrypted_bearer_token?: string;
+  token_expires_at?: string;
+  created_at: string;
 }
 
 export interface FailedUser extends User {
@@ -30,6 +34,28 @@ export interface BadgeIssuanceError {
   error: string;
   timestamp: string;
   retryCount?: number;
+}
+
+export interface OAuthTokenData {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  refresh_token: string;
+  scope: string;
+  user_id: string;
+  username: string;
+}
+
+export interface BadgrUser {
+  entityId: string;
+  entityType: string;
+  openBadgeId: string;
+  createdAt: string;
+  createdBy: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  username: string;
 }
 
 
