@@ -3,9 +3,6 @@ CREATE TABLE IF NOT EXISTS users (
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     badge_received INTEGER DEFAULT 0,
-    badgr_username TEXT,
-    encrypted_bearer_token TEXT,  
-    encrypted_refresh_token TEXT,
-    token_expires_at DATETIME,
+    provider TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

@@ -7,6 +7,13 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@hono/oauth-providers':
+        specifier: ^0.8.2
+        version: 0.8.2(hono@4.8.4)
+      hono:
+        specifier: ^4.8.4
+        version: 4.8.4
     devDependencies:
       typescript:
         specifier: ^5.5.2
@@ -221,6 +228,12 @@ packages:
     resolution: {integrity: sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==}
     engines: {node: '>=14'}
 
+  '@hono/oauth-providers@0.8.2':
+    resolution: {integrity: sha512-xQa9bt6Z/xAMvT+MTHHhXX28nyzqSDZl8LzszM071dIzoEcBx/NwZLnZjPm+7ZiRZb/2E9tiP5GMbBimtYrEHg==}
+    engines: {node: '>=18.4.0'}
+    peerDependencies:
+      hono: '>=3.*'
+
   '@img/sharp-darwin-arm64@0.33.5':
     resolution: {integrity: sha512-UT4p+iz/2H4twwAoLCqfA9UH5pI6DggwKEGuaPy7nCVQ8ZsiY5PIcrRvD1DzuY3qYL07NtIQcWnBSY/heikIFQ==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
@@ -401,6 +414,10 @@ packages:
 
   glob-to-regexp@0.4.1:
     resolution: {integrity: sha512-lkX1HJXwyMcprw/5YUZc2s7DrpAiHB21/V+E1rHUrVNokkvB6bqMzT0VfV6/86ZNabt1k14YOIaT7nDvOX3Iiw==}
+
+  hono@4.8.4:
+    resolution: {integrity: sha512-KOIBp1+iUs0HrKztM4EHiB2UtzZDTBihDtOF5K6+WaJjCPeaW4Q92R8j63jOhvJI5+tZSMuKD9REVEXXY9illg==}
+    engines: {node: '>=16.9.0'}
 
   is-arrayish@0.3.2:
     resolution: {integrity: sha512-eVRqCvVlZbuw3GrM63ovNSNAeA1K16kaR/LRY/92w0zxQ5/1YzwblUX652i4Xs9RwAGjW9d9y6X88t8OaAJfWQ==}
@@ -618,6 +635,10 @@ snapshots:
 
   '@fastify/busboy@2.1.1': {}
 
+  '@hono/oauth-providers@0.8.2(hono@4.8.4)':
+    dependencies:
+      hono: 4.8.4
+
   '@img/sharp-darwin-arm64@0.33.5':
     optionalDependencies:
       '@img/sharp-libvips-darwin-arm64': 1.0.4
@@ -777,6 +798,8 @@ snapshots:
       source-map: 0.6.1
 
   glob-to-regexp@0.4.1: {}
+
+  hono@4.8.4: {}
 
   is-arrayish@0.3.2: {}
 
