@@ -8,8 +8,9 @@
 	"main": "src/index.ts",
 	"compatibility_date": "2025-06-07",
 	"vars": {
-		"ENVIRONMENT": "production",
-		"ALLOWED_ORIGINS": "https://tour.json-schema.org"
+		"ENVIRONMENT": "development",
+		"ALLOWED_ORIGINS": "https://tour.json-schema.org",	
+		"FRONTEND_URL": "https://tour.json-schema.org"
 	},
 	"observability": {
 		"enabled": true
@@ -33,14 +34,30 @@
 		"development": {
 			"vars": {
 				"ENVIRONMENT": "development",
-				"ALLOWED_ORIGINS": "*"
-			}
+				"ALLOWED_ORIGINS": "http://localhost:3000",
+				"FRONTEND_URL": "http://localhost:3000"
+			},
+			"d1_databases": [
+				{
+				"binding": "DB",
+				"database_name": "db",
+				"database_id": "<unique-ID-for-your-database>"
+				}
+			],
 		},
 		"production": {
 			"vars": {
 				"ENVIRONMENT": "production",
-				"ALLOWED_ORIGINS": "https://tour.json-schema.org"
-			}
+				"ALLOWED_ORIGINS": "https://tour.json-schema.org",
+				"FRONTEND_URL": "https://tour.json-schema.org"
+			},
+			"d1_databases": [
+				{
+				"binding": "DB",
+				"database_name": "db",
+				"database_id": "<unique-ID-for-your-database>"
+				}
+			],
 		}
 	},
 	/**
