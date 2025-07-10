@@ -1,7 +1,8 @@
-import { Env, Hono } from "hono";
+import { Env, ExecutionContext, Hono } from "hono";
 import { processPendingUsers } from "./cron/cronJob";
-import { Bindings } from "hono/types";
 import { auth } from "./routes/auth";
+import { Bindings } from "hono/types";
+
 
 const app = new Hono<{
   Bindings: Bindings
@@ -10,8 +11,17 @@ const app = new Hono<{
 app.route('/api/v1/auth', auth);
 
 export default {
-  fetch: app.fetch,
-  scheduled: async (env: Env) => {
-    await processPendingUsers(env);
+  scheduled(
+    event: ScheduledEvent,
+    env: Bindings,
+    ctx: ExecutionContext
+  ) {
+    const delayedProcessing = async () => {
+      await processPendingUsers()
+    }
+    ctx.waitUntil(delayedProcessing())
+  },
+  fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    return app.fetch(request, env, ctx);
   },
 };
