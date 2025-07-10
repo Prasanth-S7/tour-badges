@@ -77,6 +77,7 @@ auth.get("/:provider", async (c, next) => {
         client_id: String(e.GITHUB_CLIENT_ID),
         client_secret: String(e.GITHUB_CLIENT_SECRET),
         scope: ["read:user", "user:email"],
+        oauthApp: true
       })(c, next);
     case "microsoft":
       return msentraAuth({
@@ -111,6 +112,7 @@ auth.get("/:provider", async (c, next) => {
       name = user?.name ?? user?.displayName ?? "";
       break;
     default:
+      console.log("Unsupported provider")
       return c.json({ error: "Unsupported provider" }, 400);
   }
 
