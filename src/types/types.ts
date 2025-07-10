@@ -5,7 +5,7 @@ export interface User {
   email: string;
   name: string;
   badge_received: number;
-  status: string;
+  badge_status: string;
   created_at: string;
 }
 
