@@ -4,6 +4,6 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT UNIQUE NOT NULL,
     badge_received INTEGER DEFAULT 0,
     provider TEXT NOT NULL,
-    status TEXT DEFAULT 'registered',
+    badge_status TEXT DEFAULT 'registered',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
