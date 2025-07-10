@@ -1,13 +1,32 @@
+import { Bindings as HonoBindings } from "hono/types";
+
 export interface User {
   id: number;
   email: string;
   name: string;
   badge_received: number;
-  badgr_username?: string;
-  encrypted_bearer_token?: string;
-  encrypted_refresh_token?: string;
-  token_expires_at?: string;
+  status: string;
   created_at: string;
+}
+
+export interface Bindings extends HonoBindings{
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
+  GITHUB_CLIENT_ID: string;
+  GITHUB_CLIENT_SECRET: string;
+  MICROSOFT_CLIENT_ID: string;
+  MICROSOFT_CLIENT_SECRET: string;
+  FRONTEND_URL: string;
+  DB: D1Database;
+}
+
+interface Env extends Cloudflare.Env {
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
+  GITHUB_CLIENT_ID: string;
+  GITHUB_CLIENT_SECRET: string;
+  MICROSOFT_CLIENT_ID: string;
+  MICROSOFT_CLIENT_SECRET: string;
 }
 
 export interface FailedUser extends User {

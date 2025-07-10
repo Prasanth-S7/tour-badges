@@ -2,6 +2,7 @@ import { Env, ExecutionContext, Hono } from "hono";
 import { processPendingUsers } from "./cron/cronJob";
 import { auth } from "./routes/auth";
 import { Bindings } from "hono/types";
+import { user } from "./routes/user"
 
 
 const app = new Hono<{
@@ -9,6 +10,7 @@ const app = new Hono<{
 }>();
 
 app.route('/api/v1/auth', auth);
+app.route('/api/v1/user', user);
 
 export default {
   scheduled(
