@@ -3,16 +3,67 @@ import { googleAuth } from "@hono/oauth-providers/google";
 import { githubAuth } from "@hono/oauth-providers/github";
 import { msentraAuth } from "@hono/oauth-providers/msentra";
 import { Bindings } from "../types/types";
+import { cookieOptions, getCorsHeaders } from "../constants/cors";
 
 export const auth = new Hono<{
   Bindings: Bindings
 }>();
 
+auth.options("*", (c) => {
+  const corsHeaders = getCorsHeaders(c.env);
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    c.header(key, value);
+  });
+  return new Response(null, { 
+    status: 204,
+    headers: corsHeaders
+  });
+});
+
+auth.get("/check", async (c) => {
+  const corsHeaders = getCorsHeaders(c.env);
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    c.header(key, value);
+  });
+
+  const authCookie = c.req.header('Cookie');
+  if (!authCookie) {
+    return c.json({ authenticated: false });
+  }
+
+  const cookies = authCookie.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    acc[key.trim()] = value;
+    return acc;
+  }, {} as { [key: string]: string });
+
+  const userEmail = cookies.user_email;
+  if (!userEmail) {
+    return c.json({ authenticated: false });
+  }
+
+  const user = await c.env.DB.prepare(
+    'SELECT id, email, name FROM users WHERE email = ?'
+  ).bind(userEmail).first();
+
+  return c.json({ 
+    authenticated: !!user,
+    user: user ? {
+      email: user.email,
+      name: user.name
+    } : null
+  });
+});
+
 auth.get("/:provider", async (c, next) => {
+  // Add CORS headers
+  const corsHeaders = getCorsHeaders(c.env);
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    c.header(key, value);
+  });
+
   const provider = c.req.param("provider");
   const e = c.env;
-
-  console.log(e.GOOGLE_CLIENT_ID)
 
   switch (provider) {
     case "google":
@@ -70,21 +121,12 @@ auth.get("/:provider", async (c, next) => {
 
     if (!existingUser) {
       await c.env.DB.prepare(
-        'INSERT INTO users (email, name, provider, status) VALUES (?, ?, ?, ?)'
+        'INSERT INTO users (email, name, provider, badge_status) VALUES (?, ?, ?, ?)'
       ).bind(email, name, providerName, 'registered').run();
     }
   }
 
   const token = c.get("token");
-  const grantedScopes = c.get("granted-scopes");
-
-  const cookieOptions = {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'Strict',
-    path: '/',
-    maxAge: 7 * 24 * 60 * 60 // 7 days
-  };
 
   c.header('Set-Cookie', `auth_token=${token ? String(token) : ''}; ${Object.entries(cookieOptions).map(([k, v]) => `${k}=${v}`).join('; ')}`);
   c.header('Set-Cookie', `user_email=${email}; ${Object.entries(cookieOptions).map(([k, v]) => `${k}=${v}`).join('; ')}`);
@@ -95,6 +137,6 @@ auth.get("/:provider", async (c, next) => {
     redirectUrl.searchParams.set('email', email);
     return c.redirect(redirectUrl.toString());
   } else {
-    return c.json({ token, grantedScopes, user });
+    return c.redirect(`http://localhost:3000/?cert=error`);;
   }
 });
