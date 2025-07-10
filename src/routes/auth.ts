@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import { googleAuth } from "@hono/oauth-providers/google";
 import { githubAuth } from "@hono/oauth-providers/github";
 import { msentraAuth } from "@hono/oauth-providers/msentra";
-import { env } from "hono/adapter";
 import { Bindings } from "../types/types";
 
 export const auth = new Hono<{
@@ -10,65 +9,92 @@ export const auth = new Hono<{
 }>();
 
 auth.get("/:provider", async (c, next) => {
-    const provider = c.req.param("provider");
-    const e = env(c);
-    
-    switch(provider){
-      case "google":
-        return googleAuth({
-          client_id: String(e.GOOGLE_CLIENT_ID),
-          client_secret: String(e.GOOGLE_CLIENT_SECRET),
-          scope: ["openid", "email", "profile"],
-        })(c, next);
-      case "github":
-        return githubAuth({
-          client_id: String(e.GITHUB_CLIENT_ID),
-          client_secret: String(e.GITHUB_CLIENT_SECRET),
-          scope: ["read:user", "user:email"],
-        })(c, next);
-      case "microsoft":
-        return msentraAuth({
-          client_id: String(e.MICROSOFT_CLIENT_ID),
-          client_secret: String(e.MICROSOFT_CLIENT_SECRET),
-          scope: ["openid", "email", "profile"],
-        })(c, next);
-      default:
-        return c.json({ error: "Unsupported provider" }, 400);
+  const provider = c.req.param("provider");
+  const e = c.env;
+
+  console.log(e.GOOGLE_CLIENT_ID)
+
+  switch (provider) {
+    case "google":
+      return googleAuth({
+        client_id: String(e.GOOGLE_CLIENT_ID),
+        client_secret: String(e.GOOGLE_CLIENT_SECRET),
+        scope: ["openid", "email", "profile"],
+      })(c, next);
+    case "github":
+      return githubAuth({
+        client_id: String(e.GITHUB_CLIENT_ID),
+        client_secret: String(e.GITHUB_CLIENT_SECRET),
+        scope: ["read:user", "user:email"],
+      })(c, next);
+    case "microsoft":
+      return msentraAuth({
+        client_id: String(e.MICROSOFT_CLIENT_ID),
+        client_secret: String(e.MICROSOFT_CLIENT_SECRET),
+        scope: ["openid", "email", "profile"],
+      })(c, next);
+    default:
+      return c.json({ error: "Unsupported provider" }, 400);
+  }
+}, async (c) => {
+  const provider = c.req.param("provider");
+  let user: any;
+  let email = "";
+  let name = "";
+  let providerName = provider;
+
+  switch (provider) {
+    case "google":
+      user = c.get("user-google");
+      email = user?.email ?? "";
+      name = user?.name ?? "";
+      break;
+    case "github":
+      user = c.get("user-github");
+      email = user?.email ?? "";
+      name = user?.name ?? "";
+      break;
+    case "microsoft":
+      user = c.get("user-msentra");
+      email = user?.email ?? user?.mail ?? user?.userPrincipalName ?? "";
+      name = user?.name ?? user?.displayName ?? "";
+      break;
+    default:
+      return c.json({ error: "Unsupported provider" }, 400);
+  }
+
+  if (user && email && name && providerName) {
+    const existingUser = await c.env.DB.prepare(
+      'SELECT id FROM users WHERE email = ?'
+    ).bind(email).first();
+
+    if (!existingUser) {
+      await c.env.DB.prepare(
+        'INSERT INTO users (email, name, provider, status) VALUES (?, ?, ?, ?)'
+      ).bind(email, name, providerName, 'registered').run();
     }
-  }, async (c) => {
-    const provider = c.req.param("provider");
-    let user: any;
-    let email = "";
-    let name = "";
-    let providerName = provider;
-  
-    switch (provider) {
-      case "google":
-        user = c.get("user-google");
-        email = user?.email ?? "";
-        name = user?.name ?? "";
-        break;
-      case "github":
-        user = c.get("user-github");
-        email = user?.email ?? "";
-        name = user?.name ?? "";
-        break;
-      case "microsoft":
-        user = c.get("user-msentra");
-        email = user?.mail ?? ""
-        name = user?.userPrincipalName ?? user?.displayName ?? "";
-        break;
-      default:
-        return c.json({ error: "Unsupported provider" }, 400);
-    }
-  
-    if (user && email && name && providerName) {
-      await env(c).DB.prepare(
-        'INSERT INTO users (email, name, provider) VALUES (?, ?, ?)'
-      ).bind(email, name, providerName).run();
-    }
-  
-    const token = c.get("token");
-    const grantedScopes = c.get("granted-scopes");
+  }
+
+  const token = c.get("token");
+  const grantedScopes = c.get("granted-scopes");
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'Strict',
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60 // 7 days
+  };
+
+  c.header('Set-Cookie', `auth_token=${token ? String(token) : ''}; ${Object.entries(cookieOptions).map(([k, v]) => `${k}=${v}`).join('; ')}`);
+  c.header('Set-Cookie', `user_email=${email}; ${Object.entries(cookieOptions).map(([k, v]) => `${k}=${v}`).join('; ')}`);
+
+  if (c.env.FRONTEND_URL) {
+    const redirectUrl = new URL('/certificate', c.env.FRONTEND_URL);
+    redirectUrl.searchParams.set('cert', 'success');
+    redirectUrl.searchParams.set('email', email);
+    return c.redirect(redirectUrl.toString());
+  } else {
     return c.json({ token, grantedScopes, user });
-  });
+  }
+});
