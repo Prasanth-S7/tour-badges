@@ -1,10 +1,6 @@
-# Badgr OAuth Configuration (Required)
-BADGR_CLIENT_ID=<your_badgr_client_id>
-BADGR_CLIENT_SECRET=<your_badgr_client_secret>
-BADGR_REDIRECT_URI=https://your-worker-domain.workers.dev
-
-# Encryption Key
-ENCRYPTION_KEY=<your_encryption_key>
-
-# Slack Notifications
-# SLACK_WEBHOOK_URL=<your_slack_webhook_url>
+SLACK_WEBHOOK_URL=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+HOLOPIN_API_KEY=
