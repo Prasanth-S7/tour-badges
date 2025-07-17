@@ -6,10 +6,7 @@ import { Bindings } from "../types/types";
 import { cookieOptions, getCorsHeaders } from "../constants/cors";
 import {
   getCookie,
-  getSignedCookie,
   setCookie,
-  setSignedCookie,
-  deleteCookie,
 } from 'hono/cookie'
 
 export const auth = new Hono<{
@@ -33,7 +30,6 @@ auth.get("/check", async (c) => {
     c.header(key, value);
   });
 
-  // Use Hono's getCookie instead of manual parsing
   const userEmail = getCookie(c, 'user_email');
   
   if (!userEmail) {
@@ -127,19 +123,15 @@ auth.get("/:provider", async (c, next) => {
   }
 
   const token = c.get("token");
+  const redirectUrl = new URL('/certificate', c.env.FRONTEND_URL);
 
-  // Use Hono's setCookie instead of manual header setting
   if (token) {
     setCookie(c, 'auth_token', String(token), cookieOptions);
-  }
-  setCookie(c, 'user_email', email, cookieOptions);
-
-  if (c.env.FRONTEND_URL) {
-    const redirectUrl = new URL('/certificate', c.env.FRONTEND_URL);
+    setCookie(c, 'user_email', email, cookieOptions);
     redirectUrl.searchParams.set('cert', 'success');
     redirectUrl.searchParams.set('email', email);
     return c.redirect(redirectUrl.toString());
-  } else {
-    return c.redirect(`http://localhost:3000/?cert=error`);;
   }
+  redirectUrl.searchParams.set('cert', 'error');
+  return c.redirect(redirectUrl.toString());
 });
