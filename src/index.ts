@@ -1,7 +1,7 @@
-import { Env, ExecutionContext, Hono } from "hono";
+import { ExecutionContext, Hono } from "hono";
 import { processPendingUsers } from "./cron/cronJob";
 import { auth } from "./routes/auth";
-import { Bindings } from "hono/types";
+import { Bindings } from "./types/types";
 import { user } from "./routes/user"
 
 
@@ -19,11 +19,11 @@ export default {
     ctx: ExecutionContext
   ) {
     const delayedProcessing = async () => {
-      await processPendingUsers()
+      await processPendingUsers(env)
     }
     ctx.waitUntil(delayedProcessing())
   },
-  fetch(request: Request, env: Env, ctx: ExecutionContext) {
+  fetch(request: Request, env: Bindings, ctx: ExecutionContext) {
     return app.fetch(request, env, ctx);
   },
 };

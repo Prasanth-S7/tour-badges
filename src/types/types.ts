@@ -16,17 +16,22 @@ export interface Bindings extends HonoBindings{
   GITHUB_CLIENT_SECRET: string;
   MICROSOFT_CLIENT_ID: string;
   MICROSOFT_CLIENT_SECRET: string;
+  HOLOPIN_API_KEY: string;
+  HOLOPIN_STICKER_ID: string;
   FRONTEND_URL: string;
+  ENVIRONMENT: "development" | "production";
+  ALLOWED_ORIGINS: string;
+  SLACK_WEBHOOK_URL: string;
   DB: D1Database;
 }
 
-interface Env extends Cloudflare.Env {
-  GOOGLE_CLIENT_ID: string;
-  GOOGLE_CLIENT_SECRET: string;
-  GITHUB_CLIENT_ID: string;
-  GITHUB_CLIENT_SECRET: string;
-  MICROSOFT_CLIENT_ID: string;
-  MICROSOFT_CLIENT_SECRET: string;
+export interface HolopinSuccessResponse {
+  message: string;
+  data :{
+    id: string;
+    stickerId: string;
+    metadata: string;
+  }
 }
 
 export interface FailedUser extends User {
@@ -77,7 +82,6 @@ export interface BadgrUser {
   lastName: string;
   username: string;
 }
-
 
 export interface BatchResult {
   successfulUsers: User[];

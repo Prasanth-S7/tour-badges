@@ -1,15 +1,15 @@
 import { getPendingUsers } from "../utils/cronHelpers";
-import { User, BadgeIssuanceError, BatchResult } from "../types/types";
+import { User, BadgeIssuanceError, BatchResult, Bindings } from "../types/types";
 import { issueBadge } from "./issueBadge";
 import { createSlackNotifier, ErrorReport } from "../utils/slack";
 
-export async function processPendingUsers(env: any): Promise<void> {
+export async function processPendingUsers(env: Bindings): Promise<void> {
   const BATCH_SIZE = 10;
   const startTime = Date.now();
   
   try {
     // Get pending users
-    const pendingUsers = await getPendingUsers(env);
+    const pendingUsers = await getPendingUsers();
     
     if (pendingUsers.length === 0) {
       console.log('No pending users to process');
@@ -84,7 +84,7 @@ export async function processPendingUsers(env: any): Promise<void> {
   }
 }
 
-async function processBatch(batch: User[], env: any): Promise<BatchResult> {
+async function processBatch(batch: User[], env: Bindings): Promise<BatchResult> {
   const successfulUsers: User[] = [];
   const failedUsers: BadgeIssuanceError[] = [];
 

@@ -14,7 +14,7 @@ auth.options("*", (c) => {
   Object.entries(corsHeaders).forEach(([key, value]) => {
     c.header(key, value);
   });
-  return new Response(null, { 
+  return new Response(null, {
     status: 204,
     headers: corsHeaders
   });
