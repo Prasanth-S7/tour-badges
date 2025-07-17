@@ -4,6 +4,13 @@ import { githubAuth } from "@hono/oauth-providers/github";
 import { msentraAuth } from "@hono/oauth-providers/msentra";
 import { Bindings } from "../types/types";
 import { cookieOptions, getCorsHeaders } from "../constants/cors";
+import {
+  getCookie,
+  getSignedCookie,
+  setCookie,
+  setSignedCookie,
+  deleteCookie,
+} from 'hono/cookie'
 
 export const auth = new Hono<{
   Bindings: Bindings
@@ -26,18 +33,9 @@ auth.get("/check", async (c) => {
     c.header(key, value);
   });
 
-  const authCookie = c.req.header('Cookie');
-  if (!authCookie) {
-    return c.json({ authenticated: false });
-  }
-
-  const cookies = authCookie.split(';').reduce((acc, cookie) => {
-    const [key, value] = cookie.trim().split('=');
-    acc[key.trim()] = value;
-    return acc;
-  }, {} as { [key: string]: string });
-
-  const userEmail = cookies.user_email;
+  // Use Hono's getCookie instead of manual parsing
+  const userEmail = getCookie(c, 'user_email');
+  
   if (!userEmail) {
     return c.json({ authenticated: false });
   }
@@ -130,8 +128,11 @@ auth.get("/:provider", async (c, next) => {
 
   const token = c.get("token");
 
-  c.header('Set-Cookie', `auth_token=${token ? String(token) : ''}; ${Object.entries(cookieOptions).map(([k, v]) => `${k}=${v}`).join('; ')}`);
-  c.header('Set-Cookie', `user_email=${email}; ${Object.entries(cookieOptions).map(([k, v]) => `${k}=${v}`).join('; ')}`);
+  // Use Hono's setCookie instead of manual header setting
+  if (token) {
+    setCookie(c, 'auth_token', String(token), cookieOptions);
+  }
+  setCookie(c, 'user_email', email, cookieOptions);
 
   if (c.env.FRONTEND_URL) {
     const redirectUrl = new URL('/certificate', c.env.FRONTEND_URL);
