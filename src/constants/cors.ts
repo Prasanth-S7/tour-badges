@@ -15,7 +15,7 @@ export const getCorsHeaders = (env: any) => {
 export const cookieOptions = {
   httpOnly: true,
   secure: true,
-  sameSite: 'Lax',
+  sameSite: 'Lax' as const,
   path: '/',
   maxAge: 7 * 24 * 60 * 60 // 7 days
 };
