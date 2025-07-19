@@ -1,40 +1,14 @@
 import { Hono } from "hono";
 import { Bindings, User } from "../types/types";
-import { getCorsHeaders } from "../constants/cors";
+import { getCookie } from "hono/cookie";
 
 export const user = new Hono<{
     Bindings: Bindings
 }>();
 
-user.options("*", (c) => {
-    const corsHeaders = getCorsHeaders(c.env);
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-        c.header(key, value);
-    });
-    return new Response(null, { 
-        status: 204,
-        headers: corsHeaders
-    });
-});
-
 user.post("/claim", async (c) => {
-    const corsHeaders = getCorsHeaders(c.env);
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-        c.header(key, value);
-    });
+    const userEmail = getCookie(c, 'user_email')
 
-    const authCookie = c.req.header('Cookie');
-    if (!authCookie) {
-        return c.json({ error: 'Not authenticated' }, 401);
-    }
-
-    const cookies = authCookie.split(';').reduce((acc, cookie) => {
-        const [key, value] = cookie.trim().split('=');
-        acc[key] = value;
-        return acc;
-    }, {} as { [key: string]: string });
-
-    const userEmail = cookies.user_email;
     if (!userEmail) {
         return c.json({ error: 'User email not found' }, 401);
     }

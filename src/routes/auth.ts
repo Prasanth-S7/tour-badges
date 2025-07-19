@@ -3,7 +3,7 @@ import { googleAuth } from "@hono/oauth-providers/google";
 import { githubAuth } from "@hono/oauth-providers/github";
 import { msentraAuth } from "@hono/oauth-providers/msentra";
 import { Bindings } from "../types/types";
-import { cookieOptions, getCorsHeaders } from "../constants/cors";
+import { cookieOptions } from "../constants/constants";
 import {
   getCookie,
   setCookie,
@@ -13,23 +13,7 @@ export const auth = new Hono<{
   Bindings: Bindings
 }>();
 
-auth.options("*", (c) => {
-  const corsHeaders = getCorsHeaders(c.env);
-  Object.entries(corsHeaders).forEach(([key, value]) => {
-    c.header(key, value);
-  });
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders
-  });
-});
-
 auth.get("/check", async (c) => {
-  const corsHeaders = getCorsHeaders(c.env);
-  Object.entries(corsHeaders).forEach(([key, value]) => {
-    c.header(key, value);
-  });
-
   const userEmail = getCookie(c, 'user_email');
   
   if (!userEmail) {
@@ -50,12 +34,6 @@ auth.get("/check", async (c) => {
 });
 
 auth.get("/:provider", async (c, next) => {
-  // Add CORS headers
-  const corsHeaders = getCorsHeaders(c.env);
-  Object.entries(corsHeaders).forEach(([key, value]) => {
-    c.header(key, value);
-  });
-
   const provider = c.req.param("provider");
   const e = c.env;
 
