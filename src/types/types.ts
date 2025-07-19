@@ -38,14 +38,6 @@ export interface FailedUser extends User {
   error: string;
 }
 
-export interface AccessTokenResponse {
-	access_token: string;
-	token_type: string;
-	expires_in: number;
-	scope: string;
-	refresh_token: string;
-}
-
 export interface BadgeIssuanceResult {
   success: boolean;
   data?: any;
@@ -59,28 +51,6 @@ export interface BadgeIssuanceError {
   error: string;
   timestamp: string;
   retryCount?: number;
-}
-
-export interface OAuthTokenData {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  refresh_token: string;
-  scope: string;
-  user_id: string;
-  username: string;
-}
-
-export interface BadgrUser {
-  entityId: string;
-  entityType: string;
-  openBadgeId: string;
-  createdAt: string;
-  createdBy: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  username: string;
 }
 
 export interface BatchResult {
