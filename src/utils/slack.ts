@@ -1,26 +1,4 @@
-export interface SlackMessage {
-  text?: string;
-  blocks?: any[];
-  attachments?: any[];
-}
-
-export interface BadgeError {
-  email: string;
-  name: string;
-  error: string;
-  timestamp: string;
-}
-
-export interface ErrorReport {
-  totalProcessed: number;
-  totalFailed: number;
-  totalSuccess: number;
-  failedUsers: BadgeError[];
-  environment: string;
-  timestamp: string;
-  duration: number;
-}
-
+import { SlackMessage, ErrorReport, BadgeError } from "../types/types";
 export class SlackNotifier {
   private webhookUrl: string;
   private environment: string;

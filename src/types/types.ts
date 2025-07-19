@@ -57,3 +57,26 @@ export interface BatchResult {
   successfulUsers: User[];
   failedUsers: BadgeIssuanceError[];
 }
+
+export interface SlackMessage {
+  text?: string;
+  blocks?: any[];
+  attachments?: any[];
+}
+
+export interface BadgeError {
+  email: string;
+  name: string;
+  error: string;
+  timestamp: string;
+}
+
+export interface ErrorReport {
+  totalProcessed: number;
+  totalFailed: number;
+  totalSuccess: number;
+  failedUsers: BadgeError[];
+  environment: string;
+  timestamp: string;
+  duration: number;
+}

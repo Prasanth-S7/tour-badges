@@ -1,7 +1,8 @@
 import { getPendingUsers } from "../utils/cronHelpers";
 import { User, BadgeIssuanceError, BatchResult, Bindings } from "../types/types";
 import { issueBadge } from "./issueBadge";
-import { createSlackNotifier, ErrorReport } from "../utils/slack";
+import { createSlackNotifier } from "../utils/slack";
+import { ErrorReport } from "../types/types";
 
 export async function processPendingUsers(env: Bindings): Promise<void> {
   const BATCH_SIZE = 10;
