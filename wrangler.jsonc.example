@@ -25,6 +25,7 @@
         "binding": "DB",
         "database_name": "db",
         "database_id": "<unique-ID-for-your-database>"
+		"migrations_dir": "migrations"
         }
     ],
 	/*
@@ -42,6 +43,7 @@
 				"binding": "DB",
 				"database_name": "db",
 				"database_id": "<unique-ID-for-your-database>"
+				"migrations_dir": "migrations"
 				}
 			],
 		},
@@ -56,6 +58,7 @@
 				"binding": "DB",
 				"database_name": "db",
 				"database_id": "<unique-ID-for-your-database>"
+				"migrations_dir": "migrations"
 				}
 			],
 		}
