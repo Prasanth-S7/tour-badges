@@ -17,7 +17,7 @@ auth.get("/check", async (c) => {
   const userEmail = getCookie(c, 'user_email');
   
   if (!userEmail) {
-    return c.json({ authenticated: false });
+    return c.json({ authenticated: false, user: null });
   }
 
   const user = await c.env.DB.prepare(
@@ -89,15 +89,10 @@ auth.get("/:provider", async (c, next) => {
   }
 
   if (user && email && name && providerName) {
-    const existingUser = await c.env.DB.prepare(
-      'SELECT id FROM users WHERE email = ?'
-    ).bind(email).first();
-
-    if (!existingUser) {
-      await c.env.DB.prepare(
-        'INSERT INTO users (email, name, provider, badge_status) VALUES (?, ?, ?, ?)'
-      ).bind(email, name, providerName, 'registered').run();
-    }
+    // Using insert or ignore to handle race condition
+    await c.env.DB.prepare(
+      'INSERT OR IGNORE INTO users (email, name, provider, badge_status) VALUES (?, ?, ?, ?)'
+    ).bind(email, name, providerName, 'registered').run();
   }
 
   const token = c.get("token");

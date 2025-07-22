@@ -2,6 +2,7 @@ import { BadgeIssuanceResult } from "../types/types";
 import { User } from "../types/types";
 import { HolopinSuccessResponse } from "../types/types";
 import { Bindings } from "../types/types";
+import pRetry from "p-retry";
 
 export const issueBadge = async (email: string, name: string, env: Bindings): Promise<BadgeIssuanceResult> => {
 	try {
@@ -14,49 +15,25 @@ export const issueBadge = async (email: string, name: string, env: Bindings): Pr
 			};
 		}
 
-		const userResult = await env.DB
-			.prepare('SELECT * FROM users WHERE email = ? LIMIT 1')
-			.bind(email)
-			.all<User>();
-		
-		if (userResult.results.length === 0) {
-			console.warn(`User not found in database: ${email}`);
-			return {
-				success: false,
-				error: `User not found in database: ${email}`,
-				statusCode: 404
-			};
-		}
-		
-		const user = userResult.results[0] as User;
-
-		if (user.badge_status && user.badge_status === 'issued') {
-			console.info(`User ${email} already has badge status: ${user.badge_status}`);
-			return {
-				success: false,
-				error: 'User already has a badge',
-				statusCode: 409
-			};
-		}
-
-		const holopinResponse = await fetch(
-			`https://www.holopin.io/api/sticker/share?id=${env.HOLOPIN_STICKER_ID}&apiKey=${env.HOLOPIN_API_KEY}`,
-			{
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
+		const holopinResponse = await pRetry(async () => {
+			const response = await fetch(
+				`https://www.holopin.io/api/sticker/share?id=${env.HOLOPIN_STICKER_ID}&apiKey=${env.HOLOPIN_API_KEY}`,
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					}
 				}
+			);
+			
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 			}
-		);
-
-		if (!holopinResponse.ok) {
-			const errorText = await holopinResponse.text();
-			return {
-				success: false,
-				error: `Holopin API error: ${holopinResponse.status}`,
-				statusCode: holopinResponse.status
-			};
-		}
+			
+			return response;
+		}, { retries: 3, minTimeout: 1000, maxTimeout: 8000, onFailedAttempt: (error) => {
+			console.log(`Retrying Holopin API call for ${email}, attempt ${error.attemptNumber}: ${error.message}`);
+		} });
 
 		const holopinData = await holopinResponse.json() as HolopinSuccessResponse;
 		
