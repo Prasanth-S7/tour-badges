@@ -1,11 +1,26 @@
 import { SlackMessage, ErrorReport, BadgeError } from "../types/types";
+import pRetry from "p-retry";
 export class SlackNotifier {
   private webhookUrl: string;
   private environment: string;
+  private retryOptions = {
+    retries: 3,
+    minTimeout: 1000,
+    maxTimeout: 8000
+  };
 
   constructor(webhookUrl: string, environment: string) {
     this.webhookUrl = webhookUrl;
     this.environment = environment;
+  }
+
+  private getRetryOptions(operationType: string) {
+    return {
+      ...this.retryOptions,
+      onFailedAttempt: (error: any) => {
+        console.log(`Retrying Slack ${operationType}, attempt ${error.attemptNumber}: ${error.message}`);
+      }
+    };
   }
 
   /**
@@ -13,7 +28,7 @@ export class SlackNotifier {
    */
   async sendMessage(message: string): Promise<boolean> {
     try {
-      const response = await fetch(this.webhookUrl, {
+      const response = await pRetry(async () => fetch(this.webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -21,7 +36,7 @@ export class SlackNotifier {
         body: JSON.stringify({
           text: message,
         }),
-      });
+      }), this.getRetryOptions('message'));
 
       return response.ok;
     } catch (error) {
@@ -37,13 +52,13 @@ export class SlackNotifier {
     try {
       const message = this.createErrorReportMessage(report);
       
-      const response = await fetch(this.webhookUrl, {
+      const response = await pRetry(async () => fetch(this.webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(message),
-      });
+      }), this.getRetryOptions('error report'));
 
       return response.ok;
     } catch (error) {
@@ -59,13 +74,13 @@ export class SlackNotifier {
     try {
       const message = this.createCriticalErrorMessage(error, context);
       
-      const response = await fetch(this.webhookUrl, {
+      const response = await pRetry(async () => fetch(this.webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(message),
-      });
+      }), this.getRetryOptions('critical error'));
 
       return response.ok;
     } catch (error) {
@@ -81,13 +96,13 @@ export class SlackNotifier {
     try {
       const message = this.createSuccessMessage(totalProcessed, totalSuccess, duration);
       
-      const response = await fetch(this.webhookUrl, {
+      const response = await pRetry(async () => fetch(this.webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(message),
-      });
+      }), this.getRetryOptions('success report'));
 
       return response.ok;
     } catch (error) {

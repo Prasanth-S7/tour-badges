@@ -1,5 +1,4 @@
 import { BadgeIssuanceResult } from "../types/types";
-import { User } from "../types/types";
 import { HolopinSuccessResponse } from "../types/types";
 import { Bindings } from "../types/types";
 import pRetry from "p-retry";
