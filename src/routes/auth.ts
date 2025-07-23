@@ -89,7 +89,6 @@ auth.get("/:provider", async (c, next) => {
   }
 
   if (user && email && name && providerName) {
-    // Using insert or ignore to handle race condition
     await c.env.DB.prepare(
       'INSERT OR IGNORE INTO users (email, name, provider, badge_status) VALUES (?, ?, ?, ?)'
     ).bind(email, name, providerName, 'registered').run();
@@ -99,7 +98,6 @@ auth.get("/:provider", async (c, next) => {
   const redirectUrl = new URL('/certificate', c.env.FRONTEND_URL);
 
   if (token) {
-    setCookie(c, 'auth_token', String(token), cookieOptions);
     setCookie(c, 'user_email', email, cookieOptions);
     redirectUrl.searchParams.set('cert', 'success');
     redirectUrl.searchParams.set('email', email);
