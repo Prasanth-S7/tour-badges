@@ -19,13 +19,13 @@ importers:
         version: 6.2.1
     devDependencies:
       '@cloudflare/vitest-pool-workers':
-        specifier: ^0.8.55
+        specifier: ^0.8.56
         version: 0.8.56(@vitest/runner@3.2.4)(@vitest/snapshot@3.2.4)(vitest@3.2.4)
       typescript:
         specifier: ^5.5.2
         version: 5.8.3
       vitest:
-        specifier: ^3.2.4
+        specifier: ~3.2.0
         version: 3.2.4
       wrangler:
         specifier: ^4.19.1
