@@ -1,6 +1,6 @@
 # Tour Badges
 
-This project is a Cloudflare Workers-based API designed to automate the issuance of digital badges for participants of the JSON Schema Tour. It integrates secure user authentication via OAuth 2.0 (Google, GitHub, Microsoft), manages user data in Cloudflare D1, issues badges through the Holopin API, and provides real-time Slack notifications for operational reports and errors.
+This project is a Cloudflare Workers-based API designed to automate the issuance of digital badges for participants of the [JSON Schema Tour](https://tour.json-schema.org/). It integrates secure user authentication via OAuth 2.0 (Google, GitHub, Microsoft), manages user data in Cloudflare D1, issues badges through the Holopin API, and provides real-time Slack notifications for operational reports and errors.
 
 ## 📋 Table of Contents
 - [Features](#features)
